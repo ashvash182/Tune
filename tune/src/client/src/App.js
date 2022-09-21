@@ -1,50 +1,12 @@
 import './App.css';
-import io from 'socket.io-client';
-import { useEffect, useState } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import Login from './Login';
+import Dashboard from './Dashboard';
 
-const socket = io.connect('http://localhost:3001')
+const code = new URLSearchParams(window.location.search).get('code')
 
 function App() {
-  const [currSong, changeCurrSong] = useState(
-    {
-      'Name': 'Mutt',
-      'Artist': 'blink-182',
-      'Album': 'Enema of the State'
-    })
-
-  const sendMessage = () => {
-      socket.emit('send_message', { message: 'Hello' })
-  }
-
-  const tuneRequest = () => {
-
-  }
-
-  const expandProfile = () => {
-    
-  }
-
-  const handleSongChange = (songName, songArtist, songAlbum) => {
-
-    changeCurrSong(() => ({
-      'Name': songName,
-      'Artist': songArtist,
-      'Album': songAlbum
-    })
-    
-  )}
-
-  return (
-    <div className="App">
-      <form onsubmit= { handleSongChange }>
-        <label>
-          Name:
-          <input type="text" name="name"/>
-        </label>
-        <input type="submit" value="Submit" />
-      </form>
-    </div>
-  );
+  return code ? <Dashboard code={ code } /> : <Login />
 }
 
 export default App;
