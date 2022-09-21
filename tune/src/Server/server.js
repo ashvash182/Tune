@@ -20,6 +20,13 @@ const io = new Server(server, {
     }
 })
 
+const spotifyApi = new spotifyWebApi({
+    redirectUri: 'http://localhost:3000',
+    clientId: 'f7450a055d644e5c94cab30cafb546c9',
+    clientSecret: 'd3198745631e452aa0d921574782fe2b'
+})
+
+
 io.on('connection', (socket) => {
     console.log(`User Connected: ${socket.id}`);
 
@@ -39,25 +46,30 @@ io.on('connection', (socket) => {
     })
 
     socket.on('login_req', (req, callback) => {
-        const spotifyApi = new spotifyWebApi({
-            redirectUri: 'http://localhost:3000',
-            clientId: 'f7450a055d644e5c94cab30cafb546c9',
-            clientSecret: 'd3198745631e452aa0d921574782fe2b'
-        })
-                
+
         code = req['code'];
 
         console.log(code);
 
         spotifyApi.authorizationCodeGrant(code)
-        .then(data => {
-            console.log({
-                accessToken: data.body['access_token'],
-                refreshToken: data.body['refresh_token'],
-                expiresIn: data.body['expires_in']
-            })
-        })
+        .then(data => callback(data))
         .catch(console.error())
+    })
+
+    socket.on('refresh', (req) => {
+        const refreshToken = req['refresh_token'];
+
+        spotifyApi.refreshAccessToken().then(
+            function(data) {
+              console.log('The access token has been refreshed!');
+          
+              // Save the access token so that it's used in future calls
+              spotifyApi.setAccessToken(data.body['access_token']);
+            },
+            function(err) {
+              console.log('Could not refresh access token', err);
+            }
+          );
     })
 })
 

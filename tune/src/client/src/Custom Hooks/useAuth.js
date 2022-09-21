@@ -8,10 +8,18 @@ export default function useAuth(code) {
     const [expiresIn, setexpiresIn] = useState();
 
     useEffect(() => {
-        console.log(code)
         socket.emit('login_req', { code }, (res) => {
-            console.log(res.data);
-            window.history.pushState({}, null, '/')
+            setaccessToken(res.body['access_token']);
+            setrefreshToken(res.body['refresh_token']);
+            setexpiresIn(res.body['expires_in']);
+            console.log(accessToken);
+            console.log(refreshToken);
         })
     }, [code])
+
+    useEffect(() => {
+        socket.emit('refresh', { code })
+    }, [refreshToken, expiresIn])
+
+    return accessToken;
 }
