@@ -103,7 +103,6 @@ io.on('connection', (socket) => {
                     refresh_token: data.body['refresh_token'],
                     expires_in: data.body['expires_in']
                 });
-                console.log('callback executed?')
               }
             )   
         .catch((err) => {
@@ -138,13 +137,11 @@ io.on('connection', (socket) => {
 
     socket.on('top_artists', (data) => {
 
-        console.log('top artists receives ', data)
+        console.log('top artists receives ', data.accessToken)
 
         let spotifyApi = new spotifyWebApi({
-            accessToken: data
+            accessToken: data.accessToken
           });
-
-        console.log('set token as ', data)
 
         spotifyApi.getMyTopArtists()
         .then(function(data) {
