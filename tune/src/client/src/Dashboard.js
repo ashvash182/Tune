@@ -5,25 +5,31 @@ import io from 'socket.io-client';
 const socket = io.connect('http://localhost:3001')
 
 const Dashboard = (props) => {
-    const [accessToken, setaccessToken] = useState('');
-    const [currTopArtists, setcurrTopArtists] = useState('');
+    const [accessToken, setAccessToken] = useState('');
+    const [refreshToken, setRefreshToken] = useState('');
+    const [expiresIn, setExpiresIn] = useState('');
+    const [currTopArtists, setCurrTopArtists] = useState([]);
 
     useEffect(() => {
-
         socket.emit('login_req', { props }, function(res) {
-            setaccessToken(res.access_token, () => {
-                console.log('login_req emit completed with callback')
-            })
+            setAccessToken(res.access_token);
+            setRefreshToken(res.refresh_token);
+            setExpiresIn(res.expires_in);
         })
     }, [])
 
     useEffect(() => {
-        socket.emit('top_artists', { accessToken }, function(res) {
-            setcurrTopArtists(res.top_artists)
+        if (!accessToken == '') {
+            socket.emit('top_artists', { accessToken }, function(res) {
+                // for (let key in res.tracks.items) {
+                //     setCurrTopArtists(() => {
+                //         currTopArtists.push(res.tracks.items[key].artists[0].name);
+                //     })
+                // }
+                console.log(res)
+            })
+        }
 
-            console.log('top_artists emit completed with callback')
-            console.log('Top Artists:', currTopArtists)
-        })
     }, [accessToken])
 
     return (

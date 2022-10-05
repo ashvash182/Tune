@@ -88,8 +88,6 @@ io.on('connection', (socket) => {
 
         code = req.props['code'];
 
-        console.log(code);
-
         spotifyApi.authorizationCodeGrant(code)
         .then(
             function(data) {
@@ -98,11 +96,11 @@ io.on('connection', (socket) => {
                 spotifyApi.setRefreshToken(data.body['refresh_token']);
 
                 callback({  
-                    status: 'ok',
                     access_token: data.body['access_token'],
                     refresh_token: data.body['refresh_token'],
                     expires_in: data.body['expires_in']
                 });
+                console.log('did we get here?')
               }
             )   
         .catch((err) => {
@@ -135,21 +133,22 @@ io.on('connection', (socket) => {
           })
     })
 
-    socket.on('top_artists', (data) => {
+    socket.on('top_artists', (data, callback) => {
 
-        console.log('top artists receives ', data.accessToken)
+        console.log('top artists receives ', data)
 
-        let spotifyApi = new spotifyWebApi({
-            accessToken: data.accessToken
-          });
-
-        spotifyApi.getMyTopArtists()
-        .then(function(data) {
-          let topArtists = data.body.items;
-          console.log(topArtists);
-        }, function(err) {
-          console.log('Something went wrong with top_artists', err);
-        })
+        console.log('regardless, spotifyapi access token is ')
+        console.log(spotifyApi._credentials.accessToken)
+          
+        // Do search using the access token
+        spotifyApi.getMyTopArtists().then(
+            function(data) {
+            console.log('success!')
+            },
+            function(err) {
+            console.log('top_artists failed', err);
+            }
+        );
     })
 })
 
