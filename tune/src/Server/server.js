@@ -22,8 +22,8 @@ const io = new Server(server, {
 
 const spotifyApi = new spotifyWebApi({
     redirectUri: 'http://localhost:3000',
-    clientId: 'f7450a055d644e5c94cab30cafb546c9',
-    clientSecret: 'd3198745631e452aa0d921574782fe2b'
+    clientId: '55ab070927814122baceb56cf32982f8',
+    clientSecret: '9d9bd3c95a7c453abd4ce006fb3fbd2f'
 })
 
 app.post('/login', (req, res) => {
@@ -100,12 +100,24 @@ io.on('connection', (socket) => {
                     refresh_token: data.body['refresh_token'],
                     expires_in: data.body['expires_in']
                 });
-                console.log('did we get here?')
+
               }
             )   
         .catch((err) => {
             console.log('authCodeGrant error', err)
         })
+    })
+
+    socket.on('fetch_user_info', function(req, callback) {
+        spotifyApi.getMe()
+        .then(
+            function(data) {
+                callback(data);
+            }
+        )
+        .catch((err => {
+            console.log('fetch_user_info failed');
+        }))
     })
 
     socket.on('refresh', (req, callback) => {
@@ -133,20 +145,14 @@ io.on('connection', (socket) => {
           })
     })
 
-    socket.on('top_artists', (data, callback) => {
-
-        console.log('top artists receives ', data)
-
-        console.log('regardless, spotifyapi access token is ')
-        console.log(spotifyApi._credentials.accessToken)
-          
+    socket.on('curr_playing', (data, callback) => {          
         // Do search using the access token
-        spotifyApi.getMyTopArtists().then(
+        spotifyApi.getMyCurrentPlayingTrack().then(
             function(data) {
-            console.log('success!')
+            callback(data.body.item)
             },
             function(err) {
-            console.log('top_artists failed', err);
+            console.log('curr_playing failed', err);
             }
         );
     })

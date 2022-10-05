@@ -5,40 +5,77 @@ import io from 'socket.io-client';
 const socket = io.connect('http://localhost:3001')
 
 const Dashboard = (props) => {
+    const [userName, setUserName] = useState('');
     const [accessToken, setAccessToken] = useState('');
     const [refreshToken, setRefreshToken] = useState('');
     const [expiresIn, setExpiresIn] = useState('');
-    const [currTopArtists, setCurrTopArtists] = useState([]);
+    
+    const [currSongID, setCurrSongID] = useState('');
+    const [currSongDisp, setCurrSongDisp] = useState('');
 
-    useEffect(() => {
-        socket.emit('login_req', { props }, function(res) {
-            setAccessToken(res.access_token);
-            setRefreshToken(res.refresh_token);
-            setExpiresIn(res.expires_in);
-        })
-    }, [])
-
-    useEffect(() => {
+    const getCurrSong = () => {
         if (!accessToken == '') {
-            socket.emit('top_artists', { accessToken }, function(res) {
-                // for (let key in res.tracks.items) {
-                //     setCurrTopArtists(() => {
-                //         currTopArtists.push(res.tracks.items[key].artists[0].name);
-                //     })
-                // }
-                console.log(res)
+            socket.emit('curr_playing', { accessToken }, function(res) {
+                setCurrSongID(res);
+            })
+        }
+    }
+
+    useEffect(() => {
+        if (accessToken == '') {
+            socket.emit('login_req', { props }, function(res) {
+                setAccessToken(res.access_token);
+                setRefreshToken(res.refresh_token);
+                setExpiresIn(res.expires_in);
             })
         }
 
+        const songRefresher = setInterval(() => {
+            getCurrSong();
+          }, 1000);
+    
+        // Fix dependency array for refresh, later
+    }, [])
+
+    useEffect(() => {   
+        if (!accessToken == '') {
+
+            socket.emit('curr_playing', { accessToken }, function(res) {
+                setCurrSongID(res);
+            })
+
+            socket.emit('fetch_user_info', { accessToken }, function(res) {
+                setUserName(res.body.display_name);
+            })  
+        }
     }, [accessToken])
 
+    useEffect(() => {
+        if (!currSongID == '') {
+            console.log(currSongID);
+            setCurrSongDisp(currSongID.name + ' by' + currSongID.artists.map(x => ' ' + x.name))
+        }
+    }, [currSongID])
+
+    // Eventually allow the user to set their own refresh interval
+
     return (
-        <div className='top_artists'>
-            <h1>Access token is</h1>
-        { accessToken }
-        <h1>My top artists are</h1>
-        { currTopArtists }
-    </div>
+        <div className='homepage'>
+            <div className='userInfo'>
+                <h1>
+                    User: 
+                    <br></br>
+                    { userName }
+                </h1>
+            </div>
+            <div className='songInfo'>
+                <h1>Current Song:</h1>
+                { currSongDisp }
+                <img >
+                    Song Image:
+                </img>
+            </div>
+        </div>
     )
 }
 
