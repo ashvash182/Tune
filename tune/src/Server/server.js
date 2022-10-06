@@ -26,45 +26,7 @@ const spotifyApi = new spotifyWebApi({
     clientSecret: '9d9bd3c95a7c453abd4ce006fb3fbd2f'
 })
 
-app.post('/login', (req, res) => {
-    const code = req.body.code
-    const spotifyApi = new spotifyWebApi({
-        redirectUri: 'http://localhost:3000',
-        clientId: 'f7450a055d644e5c94cab30cafb546c9',
-        clientSecret: 'd3198745631e452aa0d921574782fe2b'
-    })
-
-    spotifyApi.authorizationCodeGrant(code)
-    .then(data => {
-        res.json({
-            accessToken: data.body['access_token'],
-            refreshToken: data.body['refresh_token'],
-            expiresIn: data.body['expires_in']
-        })
-    })
-})
-
-app.post('/refresh', (req, res) => {
-    const refreshToken = req.body.refreshToken;
-
-    const spotifyApi = new spotifyWebApi({
-        redirectUri: 'http://localhost:3000',
-        clientId: 'f7450a055d644e5c94cab30cafb546c9',
-        clientSecret: 'd3198745631e452aa0d921574782fe2b',
-        refreshToken: refreshToken
-    })
-
-    spotifyApi.refreshAccessToken().then(
-        (data) => {
-          console.log(data);
-          // Save the access token so that it's used in future calls
-          spotifyApi.setAccessToken(data.body['access_token']);
-        },
-      )
-      .catch((err) => {
-        console.log('Error with refresh', err);
-      })
-})
+const userList = [];
 
 io.on('connection', (socket) => {
     console.log(`User Connected: ${socket.id}`);
@@ -75,15 +37,6 @@ io.on('connection', (socket) => {
         })
     })
 
-    socket.on('tune_with_user', (username) => {
-        if (username.listeningStatus == 'False') {
-            console.log('User inactive')
-        }
-        else {
-            userTune(socket.id, username)
-        }
-    })
-
     socket.on('login_req', function (req, callback) {
 
         code = req.props['code'];
@@ -91,15 +44,11 @@ io.on('connection', (socket) => {
         spotifyApi.authorizationCodeGrant(code)
         .then(
             function(data) {
-                // Set the access token on the API object to use it in later calls
-                spotifyApi.setAccessToken(data.body['access_token']);
-                spotifyApi.setRefreshToken(data.body['refresh_token']);
-
                 callback({  
                     access_token: data.body['access_token'],
                     refresh_token: data.body['refresh_token'],
                     expires_in: data.body['expires_in']
-                });
+                }); 
 
               }
             )   
@@ -108,7 +57,10 @@ io.on('connection', (socket) => {
         })
     })
 
-    socket.on('fetch_user_info', function(req, callback) {
+    socket.on('fetch_user_info', function(data, callback) {
+
+        spotifyApi.setAccessToken(data.accessToken)
+
         spotifyApi.getMe()
         .then(
             function(data) {
@@ -116,36 +68,16 @@ io.on('connection', (socket) => {
             }
         )
         .catch((err => {
-            console.log('fetch_user_info failed');
+            console.log('fetch_user_info failed', err);
         }))
     })
 
-    socket.on('refresh', (req, callback) => {
-        const refreshToken = req['refresh_token'];
+    socket.on('curr_playing', (data, callback) => {
 
-        console.log('refresh is being run!')
-        console.log(refreshToken)
+        spotifyApi.setAccessToken(data.accessToken)
 
-        const spotifyApi = new spotifyWebApi({
-            redirectUri: 'http://localhost:3000',
-            clientId: 'f7450a055d644e5c94cab30cafb546c9',
-            clientSecret: 'd3198745631e452aa0d921574782fe2b'
-        })
+        console.log(data.accessToken)
 
-        spotifyApi.refreshAccessToken().then(
-            (data) => {
-              console.log(data);
-              callback(data);
-              // Save the access token so that it's used in future calls
-              spotifyApi.setAccessToken(data.body['access_token']);
-            },
-          )
-          .catch((err) => {
-            console.log('Error with refresh', err);
-          })
-    })
-
-    socket.on('curr_playing', (data, callback) => {          
         // Do search using the access token
         spotifyApi.getMyCurrentPlayingTrack().then(
             function(data) {
