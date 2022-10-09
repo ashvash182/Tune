@@ -19,6 +19,10 @@ const Dashboard = (props) => {
 
     const getCurrSong = () => {
         socket.emit('curr_playing', { accessToken }, function(res) {
+            if (res == currSongID) {
+                console.log('no change')
+                return;
+            }
             setCurrSongID(res);
         })
     }
@@ -27,9 +31,12 @@ const Dashboard = (props) => {
         socket.emit('update_user_access', { userID, accessToken })
     }
 
+    const updateServerSong = () => {
+        socket.emit('update_my_song', { userID, currSongID })
+    }
+
     const refreshAccessToken = () => {
         socket.emit('refresh_access_token', { accessToken, refreshToken }, function(data) {
-            console.log('success', data.body['access_token'])
             setAccessToken(data.body['access_token'])
             setRefreshToken(data.body['refresh_token'])
         }) 
@@ -60,7 +67,7 @@ const Dashboard = (props) => {
             socket.emit('fetch_user_info', { accessToken }, function(res) {
                 let id = res.body.id
                 let disp = res.body.display_name
-                socket.emit('add_user', { disp, id })
+                socket.emit('add_user', { disp, id, accessToken, currSongID })
                 setUserName(res.body.display_name);
                 setUserID(res.body.id);
             })
@@ -68,7 +75,7 @@ const Dashboard = (props) => {
             // const refreshAccess = setInterval(() => {
             //     refreshAccessToken();
             // }, 3600)
-            // updateServerToken();
+            updateServerToken();
         }
     }, [accessToken])
 
@@ -81,7 +88,11 @@ const Dashboard = (props) => {
         if (!currSongID == '') {
             setCurrSongDisp(currSongID.name + ' by' + currSongID.artists.map(x => ' ' + x.name))
             setCurrSongImgLink(currSongID.album.images[0].url)
+            localStorage.setItem('currSongID', currSongID)
         }
+
+        updateServerSong();
+        
     }, [currSongID])
 
     // Eventually allow the user to set their own refresh interval
@@ -91,7 +102,7 @@ const Dashboard = (props) => {
             <title>Tune</title>
             <div className='userInfo'>
                 <h1>
-                    User: { accessToken }
+                    User:
                     <br></br>
                     { userName }
                 </h1>

@@ -5,6 +5,7 @@ const cors = require('cors');
 const spotifyWebApi = require('spotify-web-api-node');
 const bodyParser = require('body-parser');
 const { stringify } = require('querystring');
+const fs = require('fs');
 
 
 const app = express();
@@ -12,7 +13,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const server = http.createServer(app);
-let users = [];
+let users = {};
 
 const io = new Server(server, {
     cors: {
@@ -62,26 +63,49 @@ io.on('connection', (socket) => {
 
     socket.on('add_user', function(data, callback) {
         let id = data.id
-        if (users[id] != undefined) {
-            users[id] = data.disp;
+        if (userExists(id)) {
+            users.id = data.disp;
         }
         else {
-            users.push({
-                key: data.id,
-                value: data.disp
+            jsonContent = {
+                [data.id]:
+                    {
+                        accessToken: data.accessToken,
+                        currSongID: data.currSongID,
+                        disp: data.disp
+                    }
+            }
+            fs.writeFile('../userList.json', JSON.stringify(jsonContent), 'utf-8', function(err) {
+                if (err) {
+                    console.log('json writing failed')
+                }
+                else {
+                    console.log('user logging complete')
+                }
             })
         }
-        console.log('Active Users', users)
     })
 
-    socket.on('user_exists', function(id) {
-        if (users[id] != undefined) {
-            return users[id];
-        }
-        else {
-            return false;
-        }
-    })
+    const userExists = (userID) => {
+        fs.readFile('../userList.json', 'utf-8', (err, jsonString) => {
+            if (err) {
+                console.log('error reading userList.json')
+                return;
+            }
+            if (jsonString.length != 0) {            
+                let exists = JSON.parse(jsonString)[userID];
+                if (!exists) {
+                    return;
+                }
+                else {
+                    return exists.accessToken
+                }
+                }
+            else {
+                console.log('no users')
+            }
+        })
+    }
 
     socket.on('fetch_user_info', function(data, callback) {
 
@@ -98,16 +122,14 @@ io.on('connection', (socket) => {
         }))
     })
 
-    socket.on('update_user_access', function(data) {
+    socket.on('update_user_accessToken', function(data) {
         let id = data.userID
-        socket.emit('user_exists', id, function(res) {
+        if (userExists(data.userID)) {
             users[id] = data.accessToken;
-        })
+        }
     })
 
     socket.on('refresh_access_token', (data, callback) => {
-        console.log('serverside refreshtoken', data.refreshToken)
-        console.log('serverside accessToken', data.accessToken)
         spotifyApi.setAccessToken(data.accessToken);
         spotifyApi.setRefreshToken(data.refreshToken);
 
@@ -136,12 +158,20 @@ io.on('connection', (socket) => {
         );
     })
 
+    socket.on('update_my_song', (data) => {
+        if (!userExists(data.userID)) {
+            console.log('user nonexistent');
+        }
+        users[data.userID].currSongID = data.currSongID;
+        console.log(users)
+    })
+
     socket.on('get_friend_curr_song', (data, callback) => {
-        socket.emit('user_exists', data.userID, function(res) {
+        if (userExists(data.userID)) {
             socket.emit('curr_playing', { res }, function(resTwo) {
                 callback(resTwo)
             })
-        })
+        }
     })
 })
 
