@@ -88,9 +88,10 @@ const Dashboard = (props) => {
 
     return (
         <div className='homepage'>
+            <title>Tune</title>
             <div className='userInfo'>
                 <h1>
-                    User: 
+                    User: { accessToken }
                     <br></br>
                     { userName }
                 </h1>

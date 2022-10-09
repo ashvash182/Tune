@@ -27,10 +27,18 @@ const spotifyApi = new spotifyWebApi({
     clientSecret: '9d9bd3c95a7c453abd4ce006fb3fbd2f'
 })
 
+const userList = [];
+
 io.on('connection', (socket) => {
     const socketID = socket;
 
     console.log(`User Connected: ${socket.id}`);
+
+    socket.on('send_message', (data) => {
+        socket.broadcast.emit('receive_message', (data) => {
+            
+        })
+    })
 
     socket.on('login_req', function (req, callback) {
 
@@ -39,15 +47,11 @@ io.on('connection', (socket) => {
         spotifyApi.authorizationCodeGrant(code)
         .then(
             function(data) {
-                // Set the access token on the API object to use it in later calls
-                spotifyApi.setAccessToken(data.body['access_token']);
-                spotifyApi.setRefreshToken(data.body['refresh_token']);
-
                 callback({  
                     access_token: data.body['access_token'],
                     refresh_token: data.body['refresh_token'],
                     expires_in: data.body['expires_in']
-                });
+                }); 
 
               }
             )   
@@ -90,7 +94,7 @@ io.on('connection', (socket) => {
             }
         )
         .catch((err => {
-            console.log('fetch_user_info failed');
+            console.log('fetch_user_info failed', err);
         }))
     })
 
