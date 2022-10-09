@@ -1,0 +1,78 @@
+[33mcommit f3bad7c25ada2c200a17deddfe505135d348f746[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Wed Oct 5 22:20:04 2022 -0700
+
+    Urgently need to fix refresh , I think it's causing a bunch of other problems
+
+[33mcommit d742ddd3123708d860c49f87a822c75a656b53c7[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Wed Oct 5 14:58:48 2022 -0700
+
+    Lot of progress, configured real-time song display with refresh
+
+[33mcommit 6f8d91e8a19f707392066054eeefd24e42ba4908[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Wed Oct 5 01:19:42 2022 -0700
+
+    Back on track, fixed some hook stuff, auth refresh still wonky but now i'm working on functionality.
+
+[33mcommit 37cf3e2a3aeb3b45395c461de7ee7f584e2b061a[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Thu Sep 22 01:40:20 2022 -0700
+
+    Began work on retrieving user data. After this, will work on fixing refresh issue and also main functionality.
+
+[33mcommit c9409aa242f752931cd982c0202906e099f903d8[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Thu Sep 22 00:39:34 2022 -0700
+
+    Converted Dashboard to a 'functioning' functional component, along with some auth tweaks
+
+[33mcommit c9efe49e4eb1b190282f8bf51d8204a019ae7361[m
+Merge: db479f4 90e3d26
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Tue Sep 20 23:45:47 2022 -0700
+
+    Merge branch 'main' of https://github.com/ashvash182/Tune
+
+[33mcommit 90e3d261382f08b9fac756eae73e407852dd2074[m
+Author: ashvash182 <47284529+ashvash182@users.noreply.github.com>
+Date:   Tue Sep 20 23:45:12 2022 -0700
+
+    Delete README.md
+
+[33mcommit db479f47755e4799a5e4fec8ea52fd250c51fb9b[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Tue Sep 20 23:44:34 2022 -0700
+
+    Worked with auth, refresh still giving issues but getting there
+
+[33mcommit 3c633bd139867bcebc0ec8e1b4515459456335c6[m
+Author: ashvash182 <47284529+ashvash182@users.noreply.github.com>
+Date:   Tue Sep 20 20:30:18 2022 -0700
+
+    readme coming soon
+
+[33mcommit 4c2bd97f06a0f8052e763c5bce64f620a3472c22[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Tue Sep 20 17:55:54 2022 -0700
+
+    Addes useAuth hook, tweaked Auth, gained access to login tokens, will begin work on functionality
+
+[33mcommit 4ad1a6ae64cbec3e6cfa96214beeaea153cec148[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Tue Sep 20 01:29:11 2022 -0700
+
+    Just checking!
+
+[33mcommit 943a580efa7f1cc15e9354c1acdb904d6038ea45[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Tue Sep 20 01:25:10 2022 -0700
+
+    Should be first commit
+
+[33mcommit f4f56cbd659f157191a42a90e6722803182b72a1[m[33m ([m[1;31morigin/master[m[33m)[m
+Author: ashvash182 <anshosca@gmail.com>
+Date:   Tue Sep 20 01:04:41 2022 -0700
+
+    first commit

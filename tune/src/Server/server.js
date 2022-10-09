@@ -12,6 +12,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const server = http.createServer(app);
+let users = [];
 
 const io = new Server(server, {
     cors: {
@@ -26,63 +27,10 @@ const spotifyApi = new spotifyWebApi({
     clientSecret: '9d9bd3c95a7c453abd4ce006fb3fbd2f'
 })
 
-app.post('/login', (req, res) => {
-    const code = req.body.code
-    const spotifyApi = new spotifyWebApi({
-        redirectUri: 'http://localhost:3000',
-        clientId: 'f7450a055d644e5c94cab30cafb546c9',
-        clientSecret: 'd3198745631e452aa0d921574782fe2b'
-    })
-
-    spotifyApi.authorizationCodeGrant(code)
-    .then(data => {
-        res.json({
-            accessToken: data.body['access_token'],
-            refreshToken: data.body['refresh_token'],
-            expiresIn: data.body['expires_in']
-        })
-    })
-})
-
-app.post('/refresh', (req, res) => {
-    const refreshToken = req.body.refreshToken;
-
-    const spotifyApi = new spotifyWebApi({
-        redirectUri: 'http://localhost:3000',
-        clientId: 'f7450a055d644e5c94cab30cafb546c9',
-        clientSecret: 'd3198745631e452aa0d921574782fe2b',
-        refreshToken: refreshToken
-    })
-
-    spotifyApi.refreshAccessToken().then(
-        (data) => {
-          console.log(data);
-          // Save the access token so that it's used in future calls
-          spotifyApi.setAccessToken(data.body['access_token']);
-        },
-      )
-      .catch((err) => {
-        console.log('Error with refresh', err);
-      })
-})
-
 io.on('connection', (socket) => {
+    const socketID = socket;
+
     console.log(`User Connected: ${socket.id}`);
-
-    socket.on('send_message', (data) => {
-        socket.broadcast.emit('receive_message', (data) => {
-            
-        })
-    })
-
-    socket.on('tune_with_user', (username) => {
-        if (username.listeningStatus == 'False') {
-            console.log('User inactive')
-        }
-        else {
-            userTune(socket.id, username)
-        }
-    })
 
     socket.on('login_req', function (req, callback) {
 
@@ -104,11 +52,37 @@ io.on('connection', (socket) => {
               }
             )   
         .catch((err) => {
-            console.log('authCodeGrant error', err)
+            console.log('authCodeGrant error')
         })
     })
 
-    socket.on('fetch_user_info', function(req, callback) {
+    socket.on('add_user', function(data, callback) {
+        let id = data.id
+        if (users[id] != undefined) {
+            users[id] = data.disp;
+        }
+        else {
+            users.push({
+                key: data.id,
+                value: data.disp
+            })
+        }
+        console.log('Active Users', users)
+    })
+
+    socket.on('user_exists', function(id) {
+        if (users[id] != undefined) {
+            return users[id];
+        }
+        else {
+            return false;
+        }
+    })
+
+    socket.on('fetch_user_info', function(data, callback) {
+
+        spotifyApi.setAccessToken(data.accessToken)
+
         spotifyApi.getMe()
         .then(
             function(data) {
@@ -120,32 +94,33 @@ io.on('connection', (socket) => {
         }))
     })
 
-    socket.on('refresh', (req, callback) => {
-        const refreshToken = req['refresh_token'];
-
-        console.log('refresh is being run!')
-        console.log(refreshToken)
-
-        const spotifyApi = new spotifyWebApi({
-            redirectUri: 'http://localhost:3000',
-            clientId: 'f7450a055d644e5c94cab30cafb546c9',
-            clientSecret: 'd3198745631e452aa0d921574782fe2b'
+    socket.on('update_user_access', function(data) {
+        let id = data.userID
+        socket.emit('user_exists', id, function(res) {
+            users[id] = data.accessToken;
         })
+    })
 
-        spotifyApi.refreshAccessToken().then(
-            (data) => {
-              console.log(data);
+    socket.on('refresh_access_token', (data, callback) => {
+        console.log('serverside refreshtoken', data.refreshToken)
+        console.log('serverside accessToken', data.accessToken)
+        spotifyApi.setAccessToken(data.accessToken);
+        spotifyApi.setRefreshToken(data.refreshToken);
+
+        spotifyApi.refreshAccessToken()
+        .then((data) => {
               callback(data);
-              // Save the access token so that it's used in future calls
-              spotifyApi.setAccessToken(data.body['access_token']);
             },
           )
           .catch((err) => {
-            console.log('Error with refresh', err);
+            console.log('Error with refresh');
           })
     })
 
-    socket.on('curr_playing', (data, callback) => {          
+    socket.on('curr_playing', (data, callback) => {  
+        
+        spotifyApi.setAccessToken(data.accessToken)
+
         // Do search using the access token
         spotifyApi.getMyCurrentPlayingTrack().then(
             function(data) {
@@ -155,6 +130,14 @@ io.on('connection', (socket) => {
             console.log('curr_playing failed', err);
             }
         );
+    })
+
+    socket.on('get_friend_curr_song', (data, callback) => {
+        socket.emit('user_exists', data.userID, function(res) {
+            socket.emit('curr_playing', { res }, function(resTwo) {
+                callback(resTwo)
+            })
+        })
     })
 })
 
