@@ -58,6 +58,7 @@ const Dashboard = (props) => {
     }, [])
 
     useEffect(() => {  
+        console.log('access token', accessToken)
         localStorage.setItem('accessToken', accessToken)      
         if (!accessToken == '') {
 
@@ -92,7 +93,7 @@ const Dashboard = (props) => {
             localStorage.setItem('currSongID', currSongID)
         }
 
-        updateServerSong();
+        // updateServerSong();
         
     }, [currSongID])
 
@@ -111,7 +112,7 @@ const Dashboard = (props) => {
                 <h1>
                     User:
                     <br></br>
-                    { accessToken }
+                    { userName }
                 </h1>
             </div>
             <div className='songInfo'>
