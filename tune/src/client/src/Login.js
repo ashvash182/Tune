@@ -11,7 +11,7 @@ CLIENT_ID + '&' +
 'response_type=code&' +
 'redirect_uri=http://localhost:3000&' +
 'scope=' +
-    'streaming ' +
+    // 'streaming ' +
     'user-library-read ' +
     'user-library-modify ' +
     'user-read-playback-state ' +

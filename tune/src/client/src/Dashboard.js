@@ -58,8 +58,9 @@ const Dashboard = (props) => {
     }, [])
 
     useEffect(() => {  
-        localStorage.setItem('accessToken', accessToken)        
+        localStorage.setItem('accessToken', accessToken)      
         if (!accessToken == '') {
+
             const songRefresher = setInterval(() => {
                 getCurrSong();
             }, 1000);
@@ -75,7 +76,7 @@ const Dashboard = (props) => {
             // const refreshAccess = setInterval(() => {
             //     refreshAccessToken();
             // }, 3600)
-            updateServerToken();
+            // updateServerToken();
         }
     }, [accessToken])
 
@@ -95,6 +96,12 @@ const Dashboard = (props) => {
         
     }, [currSongID])
 
+    useEffect(() => {
+        return () => {
+            console.log('dismounted')
+        }
+    }, [])
+
     // Eventually allow the user to set their own refresh interval
 
     return (
@@ -104,7 +111,7 @@ const Dashboard = (props) => {
                 <h1>
                     User:
                     <br></br>
-                    { userName }
+                    { accessToken }
                 </h1>
             </div>
             <div className='songInfo'>

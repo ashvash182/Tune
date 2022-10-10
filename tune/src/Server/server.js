@@ -6,6 +6,7 @@ const spotifyWebApi = require('spotify-web-api-node');
 const bodyParser = require('body-parser');
 const { stringify } = require('querystring');
 const fs = require('fs');
+const store = require('store')
 
 
 const app = express();
@@ -57,7 +58,7 @@ io.on('connection', (socket) => {
               }
             )   
         .catch((err) => {
-            console.log('authCodeGrant error')
+            console.log('authCodeGrant error', err)
         })
     })
 
@@ -118,7 +119,7 @@ io.on('connection', (socket) => {
             }
         )
         .catch((err => {
-            console.log('fetch_user_info failed', err);
+            console.log('fetch_user_info failed');
         }))
     })
 
@@ -143,8 +144,8 @@ io.on('connection', (socket) => {
           })
     })
 
-    socket.on('curr_playing', (data, callback) => {  
-        
+    socket.on('curr_playing', (data, callback) => { 
+                
         spotifyApi.setAccessToken(data.accessToken)
 
         // Do search using the access token
@@ -160,10 +161,9 @@ io.on('connection', (socket) => {
 
     socket.on('update_my_song', (data) => {
         if (!userExists(data.userID)) {
-            console.log('user nonexistent');
+            // console.log('user nonexistent');
         }
-        users[data.userID].currSongID = data.currSongID;
-        console.log(users)
+        // users[data.userID].currSongID = data.currSongID;
     })
 
     socket.on('get_friend_curr_song', (data, callback) => {
