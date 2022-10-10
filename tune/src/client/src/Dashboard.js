@@ -77,7 +77,7 @@ const Dashboard = (props) => {
             // const refreshAccess = setInterval(() => {
             //     refreshAccessToken();
             // }, 3600)
-            // updateServerToken();
+            updateServerToken();
         }
     }, [accessToken])
 

@@ -73,24 +73,26 @@ io.on('connection', (socket) => {
     socket.on('add_user', function(data, callback) {
         let id = data.id
         let jsonContent = {
-            [data.id]:
-                    {accessToken: data.accessToken,
-                    currSongID: data.currSongID,
-                    disp: data.disp}
+            userID: data.id,
+            userData: {
+                accessToken: data.accessToken,
+                currSongID: data.currSongID,
+                disp: data.disp
+            }
         }
-        if (!userExists(data.id) == false) {
+        if (userExists(data.id)) {
             console.log('user already exists!')
             return;
         }
-        console.log('about to add', jsonContent)
         fs.readFile('../userList.json', 'utf-8', (err, jsonString) => {
             if (err) {
                 console.log('error reading userList.json')
                 return;
             }
-            console.log('length is', jsonString.length)
             if (jsonString.length == 0) {
-                fs.appendFile('../userList.json', JSON.stringify(jsonContent), 'utf-8', function(err) {
+                let emptyFileContent = [];
+                emptyFileContent.push(jsonContent)
+                fs.writeFile('../userList.json', JSON.stringify(emptyFileContent), 'utf-8', function(err, resp) {
                     if (err) {
                         console.log('json writing failed')
                         return;
@@ -100,10 +102,7 @@ io.on('connection', (socket) => {
             }
             else {
                 let tempUsers = JSON.parse(jsonString);
-                Object.assign(tempUsers, {
-                    [data.id]: jsonContent
-                });
-                console.log(tempUsers)
+                tempUsers.push(jsonContent)
                 fs.writeFile('../userList.json', JSON.stringify(tempUsers), 'utf-8', function(err, newJSON) {
                     if (err) {
                         console.log('json writing failed')
@@ -114,18 +113,18 @@ io.on('connection', (socket) => {
     })
 
     const userExists = (userID) => {
+        // Issue where keys are not identified, 
+        // users are added within their userID key twice.
         fs.readFile('../userList.json', 'utf-8', (err, jsonString) => {
             if (err) {
                 console.log('error reading userList.json')
                 return;
             }
             if (jsonString.length != 0) {            
-                console.log('length is', jsonString.length);
                 let exists = JSON.parse(jsonString);
-                const keys = Object.keys(exists);
-                console.log(keys)
+                let keys = exists.map(x => x.userID)
                 if (keys.includes(userID)) {
-                    return exists[userID].accessToken
+                    return true;
                 }
                 else {
                     return false
