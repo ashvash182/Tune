@@ -14,9 +14,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const server = http.createServer(app);
-let tuneUsers = {
-    users: []
-};
+let activeUsers = [];
 
 const io = new Server(server, {
     cors: {
@@ -31,13 +29,27 @@ const spotifyApi = new spotifyWebApi({
     clientSecret: '9d9bd3c95a7c453abd4ce006fb3fbd2f'
 })
 
-const userList = [];
+const updateSongs = () => {
+    let userKeys = activeUsers.map(x => x.userData.userID);
+    for (user in activeUsers) {
+        spotifyApi.setAccessToken(activeUsers[user].userData.accessToken);
 
-fs.writeFile('../userList.json', '', 'utf-8', (err) => {
-    if (err) {
-        console.log('could not empty userlist file')
+        // Do search using the access token
+
+        spotifyApi.getMyCurrentPlayingTrack().then(
+            function(data) {
+                activeUsers[user].userData.currSongID = data;
+            },
+            function(err) {
+            console.log('curr_playing failed', err);
+            }
+        );
     }
-});
+
+    console.log('Active Users: ', activeUsers.length)
+}
+
+setInterval(updateSongs, 1000)
 
 io.on('connection', (socket) => {
     const socketID = socket;
@@ -70,70 +82,28 @@ io.on('connection', (socket) => {
         })
     })
 
-    socket.on('add_user', function(data, callback) {
-        let id = data.id
+    socket.on('update_user', function(data, callback) {
+
         let jsonContent = {
-            userID: data.id,
             userData: {
+                userID: data.id,
                 accessToken: data.accessToken,
                 currSongID: data.currSongID,
-                disp: data.disp
+                disp: data.disp,
+                currSongID: data.currSongID
             }
         }
-        if (userExists(data.id)) {
-            console.log('user already exists!')
-            return;
-        }
-        fs.readFile('../userList.json', 'utf-8', (err, jsonString) => {
-            if (err) {
-                console.log('error reading userList.json')
-                return;
-            }
-            if (jsonString.length == 0) {
-                let emptyFileContent = [];
-                emptyFileContent.push(jsonContent)
-                fs.writeFile('../userList.json', JSON.stringify(emptyFileContent), 'utf-8', function(err, resp) {
-                    if (err) {
-                        console.log('json writing failed')
-                        return;
-                    }
-                    return;
-                })
-            }
-            else {
-                let tempUsers = JSON.parse(jsonString);
-                tempUsers.push(jsonContent)
-                fs.writeFile('../userList.json', JSON.stringify(tempUsers), 'utf-8', function(err, newJSON) {
-                    if (err) {
-                        console.log('json writing failed')
-                    }
-                })
-            }
-        })
-    })
 
-    const userExists = (userID) => {
-        // Issue where keys are not identified, 
-        // users are added within their userID key twice.
-        fs.readFile('../userList.json', 'utf-8', (err, jsonString) => {
-            if (err) {
-                console.log('error reading userList.json')
-                return;
-            }
-            if (jsonString.length != 0) {            
-                let exists = JSON.parse(jsonString);
-                let keys = exists.map(x => x.userID)
-                if (keys.includes(userID)) {
-                    return true;
-                }
-                else {
-                    return false
-                }
-                }
-            else {
-                console.log('no users')
-            }
-        })
+        if (!isActiveUser(data.id)) {
+            activeUsers.push(jsonContent)
+        }
+    })   
+
+    const isActiveUser = (userID) => {
+        if (activeUsers.map(x => x.userData.userID).includes(userID)) {
+            return true;
+        }
+        return false;
     }
 
     socket.on('fetch_user_info', function(data, callback) {
@@ -151,16 +121,6 @@ io.on('connection', (socket) => {
         }))
     })
 
-    socket.on('update_user_accessToken', function(data) {
-        let id = data.userID
-        if (userExists(data.userID)) {
-            users[id] = data.accessToken;
-        }
-        else {
-            console.log('user does not exist')
-        }
-    })
-
     socket.on('refresh_access_token', (data, callback) => {
         spotifyApi.setAccessToken(data.accessToken);
         spotifyApi.setRefreshToken(data.refreshToken);
@@ -176,29 +136,22 @@ io.on('connection', (socket) => {
     })
 
     socket.on('curr_playing', (data, callback) => { 
-                
-        spotifyApi.setAccessToken(data.accessToken)
 
-        // Do search using the access token
-        spotifyApi.getMyCurrentPlayingTrack().then(
-            function(data) {
-            callback(data.body.item)
-            },
-            function(err) {
-            console.log('curr_playing failed', err);
-            }
-        );
+        if (activeUsers.find(x => x.userData.accessToken == data.accessToken) == undefined) {
+            return undefined;
+        }
+        
+        let userInfo = activeUsers.find(x => x.userData.accessToken == data.accessToken)
+
+        callback(userInfo.userData.currSongID)
     })
 
-    socket.on('update_my_song', (data) => {
-        if (!userExists(data.userID)) {
-            // console.log('user nonexistent');
-        }
-        // users[data.userID].currSongID = data.currSongID;
+    socket.on('remove_active_user', (data) => {
+
     })
 
     socket.on('get_friend_curr_song', (data, callback) => {
-        if (userExists(data.userID)) {
+        if (isActiveUser(data.userID)) {
             socket.emit('curr_playing', { res }, function(resTwo) {
                 callback(resTwo)
             })

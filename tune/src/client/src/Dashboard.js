@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useBeforeunload } from 'react-beforeunload';
 import useAuth from './Custom Hooks/useAuth'
 import Container, { AccordionCollapse } from 'react-bootstrap';
 import FriendsList from './FriendsList'
@@ -18,21 +19,15 @@ const Dashboard = (props) => {
     const [currSongImgLink, setCurrSongImgLink] = useState('')
 
     const getCurrSong = () => {
-        socket.emit('curr_playing', { accessToken }, function(res) {
-            if (res == currSongID) {
-                console.log('no change')
-                return;
-            }
-            setCurrSongID(res);
-        })
-    }
-
-    const updateServerToken = () => {
-        socket.emit('update_user_access', { userID, accessToken })
-    }
-
-    const updateServerSong = () => {
-        socket.emit('update_my_song', { userID, currSongID })
+        if (accessToken != '') {
+            socket.emit('curr_playing', { accessToken }, function(res) {
+                if (res == currSongID) {
+                    console.log('no change')
+                    return;
+                }
+                setCurrSongID(res);
+            })
+        }
     }
 
     const refreshAccessToken = () => {
@@ -58,26 +53,20 @@ const Dashboard = (props) => {
     }, [])
 
     useEffect(() => {  
-        console.log('access token', accessToken)
         localStorage.setItem('accessToken', accessToken)      
         if (!accessToken == '') {
-
-            const songRefresher = setInterval(() => {
-                getCurrSong();
-            }, 1000);
 
             socket.emit('fetch_user_info', { accessToken }, function(res) {
                 let id = res.body.id
                 let disp = res.body.display_name
-                socket.emit('add_user', { disp, id, accessToken, currSongID })
+                socket.emit('update_user', { disp, id, accessToken, currSongID })
                 setUserName(res.body.display_name);
                 setUserID(res.body.id);
             })
-            
+            setInterval(() => {getCurrSong()}, 1000);
             // const refreshAccess = setInterval(() => {
             //     refreshAccessToken();
             // }, 3600)
-            updateServerToken();
         }
     }, [accessToken])
 
@@ -88,20 +77,16 @@ const Dashboard = (props) => {
 
     useEffect(() => {
         if (!currSongID == '') {
-            setCurrSongDisp(currSongID.name + ' by' + currSongID.artists.map(x => ' ' + x.name))
-            setCurrSongImgLink(currSongID.album.images[0].url)
+            setCurrSongDisp(currSongID.body.item.name + ' by' + currSongID.body.item.artists.map(x => ' ' + x.name))
+            setCurrSongImgLink(currSongID.body.item.album.images[0].url)
             localStorage.setItem('currSongID', currSongID)
-        }
-
-        // updateServerSong();
-        
+        }        
     }, [currSongID])
 
-    useEffect(() => {
-        return () => {
-            console.log('dismounted')
-        }
-    }, [])
+    useBeforeunload(() => {
+        'you sure?'
+        socket.emit('user_close', { userID })
+    });
 
     // Eventually allow the user to set their own refresh interval
 
