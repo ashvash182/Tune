@@ -23,7 +23,6 @@ const Dashboard = (props) => {
             socket.emit('curr_playing', { accessToken }, function(res) {
                 setCurrSongID(res);
             })
-            console.log('calling')
         }
     }
 
@@ -73,11 +72,11 @@ const Dashboard = (props) => {
     }, [refreshToken])
 
     useEffect(() => {
-        if (currSongID == 'None' || currSongID == undefined) {
+        if (currSongID == '') {
             setCurrSongDisp('None')
         }
         else {
-            console.log('Logging Song', currSongID)
+            console.log('logging: ', currSongID)
             setCurrSongDisp(currSongID.body.item.name + ' by' + currSongID.body.item.artists.map(x => ' ' + x.name))
             setCurrSongImgLink(currSongID.body.item.album.images[0].url) 
         }
@@ -114,10 +113,10 @@ const Dashboard = (props) => {
                 <img src={ currSongImgLink } width='100' height='100'>
                 </img>
             </div>
-            {/* <div className='friends'>
+            <div className='friends'>
                 <FriendsList code={ userID }>
                 </FriendsList>
-            </div> */}
+            </div>
         </div>
     )
 }

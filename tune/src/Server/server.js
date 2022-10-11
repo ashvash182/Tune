@@ -42,20 +42,22 @@ const updateUserToken = function(accessToken) {
 }
 
 const updateSongs = () => {
-    let userKeys = activeUsers.map(x => x.userData.userID);
+    console.log('USERS: ', activeUsers.map(x => x.userData.userID))
     for (user in activeUsers) {
 
         // Do search using the access token
 
         updateUserToken(activeUsers[user].userData.accessToken).then((msg) => {
-            console.log(msg)
+            console.log(user)
             spotifyApi.getMyCurrentPlayingTrack().then(
                 function(data) {
+                    console.log('accessToken is? ', spotifyApi.getAccessToken())
                     if (data.statusCode != 204) {
+                        console.log(data.body.item.name)
                         activeUsers[user].userData.currSongID = data;
                     }
                     else {
-                        activeUsers[user].userData.currSongID = 'None'
+                        activeUsers[user].userData.currSongID = ''
                     }
                 },
                 function(err) {
@@ -66,18 +68,18 @@ const updateSongs = () => {
         )
     }
 
-    // console.log('Songs: ', activeUsers.map(x => {
-    //     if (x.userData.currSongID.length != 0) {
-    //         return x.userData.userID + ' playing ' + x.userData.currSongID.body.item.name
-    //     }
-    //     else {
-    //         return ''
-    //     }
-    // }))
-    console.log('Active Users: ', activeUsers)
-}
+    // Fails on ads, should be a small fix.
 
-setInterval(updateSongs, 1000)
+    console.log('Songs: ', activeUsers.map(x => {
+        if (x.userData.currSongID.length != 0) {
+            return x.userData.userID + ' playing ' + x.userData.currSongID.body.item.name
+        }
+        else {
+            return ''
+        }
+    }))
+    // console.log('Active Users: ', activeUsers)
+}
 
 io.on('connection', (socket) => {
     const socketID = socket;
@@ -118,6 +120,8 @@ io.on('connection', (socket) => {
 
         if (!isActiveUser(data.id)) {
             activeUsers.push(jsonContent)
+            clearInterval(updateSongs)
+            setInterval(updateSongs, 3000)
         }
         // What if they are an active user? How to update their server state then?
     })   
@@ -159,13 +163,11 @@ io.on('connection', (socket) => {
     })
 
     socket.on('curr_playing', (data, callback) => { 
-
         if (activeUsers.find(x => x.userData.accessToken == data.accessToken) == undefined) {
             return undefined;
         }
         
         let userInfo = activeUsers.find(x => x.userData.accessToken == data.accessToken)
-
         callback(userInfo.userData.currSongID)
     })
 
@@ -175,6 +177,10 @@ io.on('connection', (socket) => {
             return x.userData.userID !== data.userID;
         });
     })
+
+    // socket.on('become_friends', (data, callback) => {
+    //     if (isA)
+    // })
 
     socket.on('get_friend_curr_song', (data, callback) => {
         if (isActiveUser(data.userID)) {
