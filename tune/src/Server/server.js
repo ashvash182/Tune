@@ -46,6 +46,15 @@ const updateSongs = () => {
         );
     }
 
+    console.log('Songs: ', activeUsers.map(x => {
+        if (x.userData.currSongID.length != 0) {
+            console.log('length is ', x.userData.currSongID.length)
+            return x.userData.userID + ' playing ' + x.userData.currSongID.body.item.name
+        }
+        else {
+            return ''
+        }
+    }))
     console.log('Active Users: ', activeUsers.length)
 }
 
@@ -147,7 +156,10 @@ io.on('connection', (socket) => {
     })
 
     socket.on('remove_active_user', (data) => {
-
+        console.log('removing')
+        activeUsers = activeUsers.filter(function(x) {
+            return x.userData.userID !== data.userID;
+        });
     })
 
     socket.on('get_friend_curr_song', (data, callback) => {

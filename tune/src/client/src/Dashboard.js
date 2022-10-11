@@ -21,10 +21,6 @@ const Dashboard = (props) => {
     const getCurrSong = () => {
         if (accessToken != '') {
             socket.emit('curr_playing', { accessToken }, function(res) {
-                if (res == currSongID) {
-                    console.log('no change')
-                    return;
-                }
                 setCurrSongID(res);
             })
         }
@@ -53,9 +49,9 @@ const Dashboard = (props) => {
     }, [])
 
     useEffect(() => {  
-        localStorage.setItem('accessToken', accessToken)      
+        localStorage.setItem('accessToken', accessToken)   
+        console.log('what is it now?')   
         if (!accessToken == '') {
-
             socket.emit('fetch_user_info', { accessToken }, function(res) {
                 let id = res.body.id
                 let disp = res.body.display_name
@@ -77,16 +73,27 @@ const Dashboard = (props) => {
 
     useEffect(() => {
         if (!currSongID == '') {
-            setCurrSongDisp(currSongID.body.item.name + ' by' + currSongID.body.item.artists.map(x => ' ' + x.name))
-            setCurrSongImgLink(currSongID.body.item.album.images[0].url)
-            localStorage.setItem('currSongID', currSongID)
+            if (currSongID.statusCode == 204) {
+                setCurrSongDisp('No Song Playing')
+            }
+            else {
+                setCurrSongDisp(currSongID.body.item.name + ' by' + currSongID.body.item.artists.map(x => ' ' + x.name))
+                setCurrSongImgLink(currSongID.body.item.album.images[0].url)    
+            }
         }        
     }, [currSongID])
 
-    useBeforeunload(() => {
-        'you sure?'
-        socket.emit('user_close', { userID })
-    });
+    useEffect(() => {
+        const cleanup = () => {
+          socket.emit('remove_active_user', { userID })
+        }
+      
+        window.addEventListener('beforeunload', cleanup);
+      
+        return () => {
+          window.removeEventListener('beforeunload', cleanup);
+        }
+      }, []);
 
     // Eventually allow the user to set their own refresh interval
 
