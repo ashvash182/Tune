@@ -23,6 +23,7 @@ const Dashboard = (props) => {
             socket.emit('curr_playing', { accessToken }, function(res) {
                 setCurrSongID(res);
             })
+            console.log('calling')
         }
     }
 
@@ -72,28 +73,27 @@ const Dashboard = (props) => {
     }, [refreshToken])
 
     useEffect(() => {
-        if (!currSongID == '') {
-            if (currSongID.statusCode == 204) {
-                setCurrSongDisp('No Song Playing')
-            }
-            else {
-                setCurrSongDisp(currSongID.body.item.name + ' by' + currSongID.body.item.artists.map(x => ' ' + x.name))
-                setCurrSongImgLink(currSongID.body.item.album.images[0].url)    
-            }
-        }        
+        if (currSongID == 'None' || currSongID == undefined) {
+            setCurrSongDisp('None')
+        }
+        else {
+            console.log('Logging Song', currSongID)
+            setCurrSongDisp(currSongID.body.item.name + ' by' + currSongID.body.item.artists.map(x => ' ' + x.name))
+            setCurrSongImgLink(currSongID.body.item.album.images[0].url) 
+        }
     }, [currSongID])
 
-    useEffect(() => {
-        const cleanup = () => {
-          socket.emit('remove_active_user', { userID })
-        }
+    // useEffect(() => {
+    //     const cleanup = () => {
+    //       socket.emit('remove_active_user', { userID })
+    //     }
       
-        window.addEventListener('beforeunload', cleanup);
+    //     window.addEventListener('beforeunload', cleanup);
       
-        return () => {
-          window.removeEventListener('beforeunload', cleanup);
-        }
-      }, []);
+    //     return () => {
+    //       window.removeEventListener('beforeunload', cleanup);
+    //     }
+    //   }, []);
 
     // Eventually allow the user to set their own refresh interval
 

@@ -29,33 +29,52 @@ const spotifyApi = new spotifyWebApi({
     clientSecret: '9d9bd3c95a7c453abd4ce006fb3fbd2f'
 })
 
+const updateUserToken = function(accessToken) {
+    spotifyApi.setAccessToken(accessToken);
+    return new Promise((resolve, reject) => {
+        if (spotifyApi.getAccessToken() == accessToken) {
+            resolve('Success');
+        }
+        else {
+            reject('Failure');
+        }
+    })
+}
+
 const updateSongs = () => {
     let userKeys = activeUsers.map(x => x.userData.userID);
     for (user in activeUsers) {
-        spotifyApi.setAccessToken(activeUsers[user].userData.accessToken);
 
         // Do search using the access token
 
-        spotifyApi.getMyCurrentPlayingTrack().then(
-            function(data) {
-                activeUsers[user].userData.currSongID = data;
-            },
-            function(err) {
-            console.log('curr_playing failed', err);
-            }
-        );
+        updateUserToken(activeUsers[user].userData.accessToken).then((msg) => {
+            console.log(msg)
+            spotifyApi.getMyCurrentPlayingTrack().then(
+                function(data) {
+                    if (data.statusCode != 204) {
+                        activeUsers[user].userData.currSongID = data;
+                    }
+                    else {
+                        activeUsers[user].userData.currSongID = 'None'
+                    }
+                },
+                function(err) {
+                console.log('curr_playing failed', err);
+                }
+            )
+        }
+        )
     }
 
-    console.log('Songs: ', activeUsers.map(x => {
-        if (x.userData.currSongID.length != 0) {
-            console.log('length is ', x.userData.currSongID.length)
-            return x.userData.userID + ' playing ' + x.userData.currSongID.body.item.name
-        }
-        else {
-            return ''
-        }
-    }))
-    console.log('Active Users: ', activeUsers.length)
+    // console.log('Songs: ', activeUsers.map(x => {
+    //     if (x.userData.currSongID.length != 0) {
+    //         return x.userData.userID + ' playing ' + x.userData.currSongID.body.item.name
+    //     }
+    //     else {
+    //         return ''
+    //     }
+    // }))
+    console.log('Active Users: ', activeUsers)
 }
 
 setInterval(updateSongs, 1000)
@@ -64,12 +83,6 @@ io.on('connection', (socket) => {
     const socketID = socket;
 
     console.log(`User Connected: ${socket.id}`);
-
-    socket.on('send_message', (data) => {
-        socket.broadcast.emit('receive_message', (data) => {
-            
-        })
-    })
 
     socket.on('login_req', function (req, callback) {
 
@@ -106,6 +119,7 @@ io.on('connection', (socket) => {
         if (!isActiveUser(data.id)) {
             activeUsers.push(jsonContent)
         }
+        // What if they are an active user? How to update their server state then?
     })   
 
     const isActiveUser = (userID) => {
