@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import SpotifyPlayer from 'react-spotify-web-playback';
 import { useBeforeunload } from 'react-beforeunload';
 import useAuth from './Custom Hooks/useAuth'
 import Container, { AccordionCollapse } from 'react-bootstrap';
@@ -19,8 +20,8 @@ const Dashboard = (props) => {
     const [currSongImgLink, setCurrSongImgLink] = useState('')
 
     const getCurrSong = () => {
-        if (accessToken != '') {
-            socket.emit('curr_playing', { accessToken }, function(res) {
+        if (userID != '') {
+            socket.emit('curr_playing', { userID }, function(res) {
                 setCurrSongID(res);
             })
         }
@@ -50,7 +51,6 @@ const Dashboard = (props) => {
 
     useEffect(() => {  
         localStorage.setItem('accessToken', accessToken)   
-        console.log('what is it now?')   
         if (!accessToken == '') {
             socket.emit('fetch_user_info', { accessToken }, function(res) {
                 let id = res.body.id
@@ -59,12 +59,15 @@ const Dashboard = (props) => {
                 setUserName(res.body.display_name);
                 setUserID(res.body.id);
             })
-            setInterval(() => {getCurrSong()}, 1000);
             // const refreshAccess = setInterval(() => {
             //     refreshAccessToken();
             // }, 3600)
         }
     }, [accessToken])
+
+    useEffect(() => {
+        setInterval(() => {getCurrSong()}, 1000);
+    }, [userID])
 
     useEffect(() => {
         localStorage.setItem('refreshToken', refreshToken)
@@ -76,7 +79,6 @@ const Dashboard = (props) => {
             setCurrSongDisp('None')
         }
         else {
-            console.log('logging: ', currSongID)
             setCurrSongDisp(currSongID.body.item.name + ' by' + currSongID.body.item.artists.map(x => ' ' + x.name))
             setCurrSongImgLink(currSongID.body.item.album.images[0].url) 
         }
@@ -117,6 +119,9 @@ const Dashboard = (props) => {
                 <FriendsList code={ userID }>
                 </FriendsList>
             </div>
+            {/* <div className='playBack'>
+                <SpotifyPlayer token= { accessToken }/>
+            </div> */}
         </div>
     )
 }

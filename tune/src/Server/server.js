@@ -33,7 +33,8 @@ const updateUserToken = function(accessToken) {
     spotifyApi.setAccessToken(accessToken);
     return new Promise((resolve, reject) => {
         if (spotifyApi.getAccessToken() == accessToken) {
-            resolve('Success');
+            console.log('Great!!')
+            resolve(spotifyApi.getAccessToken());
         }
         else {
             reject('Failure');
@@ -44,40 +45,41 @@ const updateUserToken = function(accessToken) {
 const updateSongs = () => {
     console.log('USERS: ', activeUsers.map(x => x.userData.userID))
     for (user in activeUsers) {
+        let tempApi = new spotifyWebApi({
+            redirectUri: 'http://localhost:3000',
+            clientId: '55ab070927814122baceb56cf32982f8',
+            clientSecret: '9d9bd3c95a7c453abd4ce006fb3fbd2f'
+        })
+        
+        tempApi.setAccessToken(activeUsers[user].userData.accessToken)
 
-        // Do search using the access token
-
-        updateUserToken(activeUsers[user].userData.accessToken).then((msg) => {
-            console.log(user)
-            spotifyApi.getMyCurrentPlayingTrack().then(
-                function(data) {
-                    console.log('accessToken is? ', spotifyApi.getAccessToken())
-                    if (data.statusCode != 204) {
-                        console.log(data.body.item.name)
-                        activeUsers[user].userData.currSongID = data;
-                    }
-                    else {
-                        activeUsers[user].userData.currSongID = ''
-                    }
-                },
-                function(err) {
-                console.log('curr_playing failed', err);
+        tempApi.getMyCurrentPlayingTrack().then(
+            function(data) {
+                if (data.statusCode != 204) {
+                    console.log(data.body.item.name)
+                    activeUsers[user].userData.currSongID = data;
                 }
-            )
-        }
-        )
+                else {
+                    activeUsers[user].userData.currSongID = ''
+                }
+            },
+            function(err) {
+            console.log('curr_playing failed', err);
+            }
+        )   
+        // Do search using the access token           
     }
 
     // Fails on ads, should be a small fix.
 
-    console.log('Songs: ', activeUsers.map(x => {
-        if (x.userData.currSongID.length != 0) {
-            return x.userData.userID + ' playing ' + x.userData.currSongID.body.item.name
-        }
-        else {
-            return ''
-        }
-    }))
+    // console.log('Songs: ', activeUsers.map(x => {
+    //     if (x.userData.currSongID.length != 0) {
+    //         return x.userData.userID + ' playing ' + x.userData.currSongID.body.item.name
+    //     }
+    //     else {
+    //         return ''
+    //     }
+    // }))
     // console.log('Active Users: ', activeUsers)
 }
 
@@ -120,6 +122,7 @@ io.on('connection', (socket) => {
 
         if (!isActiveUser(data.id)) {
             activeUsers.push(jsonContent)
+            console.log('active users updated')
             clearInterval(updateSongs)
             setInterval(updateSongs, 3000)
         }
@@ -163,11 +166,11 @@ io.on('connection', (socket) => {
     })
 
     socket.on('curr_playing', (data, callback) => { 
-        if (activeUsers.find(x => x.userData.accessToken == data.accessToken) == undefined) {
+        if (activeUsers.find(x => x.userData.userID == data.userID) == undefined) {
             return undefined;
         }
         
-        let userInfo = activeUsers.find(x => x.userData.accessToken == data.accessToken)
+        let userInfo = activeUsers.find(x => x.userData.userID == data.userID)
         callback(userInfo.userData.currSongID)
     })
 
@@ -178,17 +181,19 @@ io.on('connection', (socket) => {
         });
     })
 
+    socket.on('fetch_friend_info', (data, callback) => { 
+        if (activeUsers.find(x => x.userData.userID == data.userID) == undefined) {
+            console.log('friend_info not found')
+            return undefined;
+        }
+        
+        let userInfo = activeUsers.find(x => x.userData.userID == data.userID)
+        callback(userInfo.userData)
+    })
+
     // socket.on('become_friends', (data, callback) => {
     //     if (isA)
     // })
-
-    socket.on('get_friend_curr_song', (data, callback) => {
-        if (isActiveUser(data.userID)) {
-            socket.emit('curr_playing', { res }, function(resTwo) {
-                callback(resTwo)
-            })
-        }
-    })
 })
 
 server.listen(3001, () => {
