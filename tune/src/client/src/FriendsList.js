@@ -21,7 +21,7 @@ const FriendsList = (userID) => {
     return (
         <div className='Friends'>
             <div className='Options'>
-            <h1>Add</h1>
+            <h1>Add Friend by Username</h1>
             <form onSubmit={addFriend}>
                 <label>
                     UserName:
